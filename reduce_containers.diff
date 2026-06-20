@@ -1,0 +1,88 @@
+diff --git a/unisearch/providers/container_provider.py b/unisearch/providers/container_provider.py
+--- a/unisearch/providers/container_provider.py
++++ b/unisearch/providers/container_provider.py
+@@
+-def collect_container_features(
+-    features: List[FeatureRecord],
+-) -> List[FeatureRecord]:
+-    """
+-    Build a simple container index from existing feature records.
+-
+-    For Stage 4, we group operators by their module (e.g. 'object', 'mesh')
+-    and RNA properties by their owning type names (e.g. 'Brush', 'Sculpt').
+-    Each group becomes a new FeatureRecord of type 'CONTAINER'.
+-
+-    Future stages can replace or extend this with a more accurate index of
+-    Blender’s panels, menus, and breadcrumbs.
+-    """
+-    containers: List[FeatureRecord] = []
+-    seen_modules: set[str] = set()
+-    seen_owners: set[str] = set()
+-
+-    for feature in features:
+-        # Top‑level module for operators (prefix before the first '.')
+-        if feature.feature_type == "OPERATOR":
+-            module = feature.identifier.split(".")[0]
+-            if module not in seen_modules:
+-                seen_modules.add(module)
+-                container_id = f"container:module:{module}"
+-                label = module.capitalize()
+-                containers.append(
+-                    FeatureRecord(
+-                        feature_id=container_id,
+-                        label=label,
+-                        identifier=container_id,
+-                        feature_type="CONTAINER",
+-                        source="Operator Module",
+-                    )
+-                )
+-
+-        # Owners for RNA properties (e.g. Brush, Sculpt)
+-        if feature.feature_type == "RNA_PROPERTY":
+-            for owner in feature.owners:
+-                if owner not in seen_owners:
+-                    seen_owners.add(owner)
+-                    container_id = f"container:owner:{owner}"
+-                    containers.append(
+-                        FeatureRecord(
+-                            feature_id=container_id,
+-                            label=owner,
+-                            identifier=container_id,
+-                            feature_type="CONTAINER",
+-                            source="RNA Owner",
+-                        )
+-                    )
+-
+-    return containers
++def collect_container_features(features: List[FeatureRecord]) -> List[FeatureRecord]:
++    """
++    Build a reduced container index from existing feature records.
++
++    Only one container is generated per unique operator module.  RNA owners
++    are deliberately omitted to keep the number of containers manageable.
++    Modules are normalised to lower case to avoid duplicate entries like
++    'Object' and 'object'.
++    """
++    containers: List[FeatureRecord] = []
++    seen_modules: set[str] = set()
++
++    for feature in features:
++        if feature.feature_type == "OPERATOR":
++            # Normalise the module name (prefix before the first dot) to lower case
++            module = feature.identifier.split(".", 1)[0].lower()
++            if module not in seen_modules:
++                seen_modules.add(module)
++                container_id = f"container:module:{module}"
++                label = module.replace("_", " ").title()
++                containers.append(
++                    FeatureRecord(
++                        feature_id=container_id,
++                        label=label,
++                        identifier=container_id,
++                        feature_type="CONTAINER",
++                        description=f"Operator module: {module}",
++                        source="CONTAINER",
++                    )
++                )
++
++    return containers
