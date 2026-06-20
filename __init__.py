@@ -14,6 +14,9 @@ from .debug.debug_panel import (
 
 from .debug.debug_operators import (
     UNISEARCH_OT_build_index,
+    UNISEARCH_OT_inspect_container,
+    UNISEARCH_OT_inspect_locations,
+    UNISEARCH_OT_inspect_unmatched_locations,
     UNISEARCH_OT_test_query,
 )
 
@@ -21,6 +24,9 @@ from .debug.debug_operators import (
 classes = (
     UNISEARCH_OT_build_index,
     UNISEARCH_OT_test_query,
+    UNISEARCH_OT_inspect_locations,
+    UNISEARCH_OT_inspect_container,
+    UNISEARCH_OT_inspect_unmatched_locations,
     UNISEARCH_PT_debug,
 )
 

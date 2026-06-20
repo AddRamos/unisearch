@@ -2,6 +2,7 @@ from ..providers.rna_provider import collect_rna_features
 from ..providers.operator_provider import collect_operator_features
 from ..providers.container_provider import collect_container_features
 from .token_index import TokenIndex
+from .location_index import LocationIndex
 
 
 ALIASES = {
@@ -38,6 +39,8 @@ class FeatureIndex:
         self.by_id = {}
 
         self.token_index = TokenIndex()
+
+        self.location_index = LocationIndex()
 
     def rebuild(self):
 
@@ -83,6 +86,8 @@ class FeatureIndex:
             ] = feature
 
         self.token_index.build(self.features)
+
+        self.location_index.build(self.features)
 
     def search(self, query):
 
