@@ -1,0 +1,190 @@
+### What I can always do
+
+I can write the addon code directly in chat:
+
+```text
+__init__.py
+providers/rna_provider.py
+providers/operator_provider.py
+...
+```
+
+either:
+
+* file-by-file
+* module-by-module
+* complete addon version-by-version
+
+This is the most reliable approach because you can review every file before integrating it.
+
+---
+
+### What I can often do
+
+If the environment supports file creation, I can generate:
+
+```text
+unisearch/
+    __init__.py
+    core/
+    providers/
+    resolver/
+    ...
+```
+
+and package it into:
+
+```text
+unisearch.zip
+```
+
+then provide a downloadable file.
+
+However, I only know that is possible when the tooling for the current conversation exposes file-generation capabilities.
+
+---
+
+### What I recommend for this project
+
+Given the complexity of UniSearch, I would **not jump directly to a ZIP**.
+
+Instead:
+
+## Milestone Delivery
+
+### Milestone 1
+
+Stage 1 + Stage 2
+
+```text
+Feature models
+RNA provider
+Operator provider
+Token index
+Debug panel
+```
+
+Deliver as:
+
+```text
+Version 0.2.0
+```
+
+Test.
+
+---
+
+### Milestone 2
+
+Stage 3 + Stage 4
+
+```text
+Aliases
+Container index
+```
+
+Deliver:
+
+```text
+Version 0.3.0
+```
+
+Test.
+
+---
+
+### Milestone 3
+
+Stage 5 + Stage 6
+
+```text
+Location discovery
+Addon preferences
+```
+
+Deliver:
+
+```text
+Version 0.4.0
+```
+
+Test.
+
+---
+
+And so on.
+
+This is much safer because if we discover:
+
+```text
+AST strategy needs adjustment
+Container model needs changes
+```
+
+we are modifying:
+
+```text
+provider_ast.py
+```
+
+instead of rewriting a huge finished addon.
+
+---
+
+### What I would do if we start coding
+
+I would first generate:
+
+```text
+unisearch/
+│
+├── __init__.py
+│
+├── core/
+│   ├── models.py
+│   ├── tokenizer.py
+│   └── search_result.py
+│
+├── providers/
+│   ├── rna_provider.py
+│   └── operator_provider.py
+│
+├── index/
+│   ├── feature_index.py
+│   └── token_index.py
+│
+├── debug/
+│   ├── debug_panel.py
+│   └── debug_operators.py
+```
+
+which corresponds exactly to:
+
+```text
+Stage 1
+Stage 2
+```
+
+and produces the first working backend.
+
+At that point you can search:
+
+```text
+cavity
+delete
+save
+```
+
+and see real Blender data instead of dummy results.
+
+Only after that passes validation would we proceed to containers and breadcrumb discovery.
+
+For this project, my preferred workflow is:
+
+1. Build one stage.
+2. Deliver complete code for that stage.
+3. You test inside Blender.
+4. We review results.
+5. Move to next stage.
+
+That minimizes risk and keeps the architecture aligned with the roadmap.
