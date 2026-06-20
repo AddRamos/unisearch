@@ -1,0 +1,88 @@
+Here is a comprehensive progress report summarizing everything we’ve achieved in this chat session. We reviewed the original plan documents, implemented several key stages of UniSearch, and verified the outcomes with tests:
+
+---
+
+## Context & Planning
+
+1. **Plan Documents Reviewed**
+
+   * **2- planExec.md** – A high‑level execution plan listing 12 stages from feature acquisition to cache and final search pipeline. It stresses incremental development, avoiding premature breadcrumb building, and verifying each layer separately.
+   * **2.1-backend_plan.md** – A detailed backend blueprint with a full directory structure, data models (feature, container, location candidate, resolved result), and step-by-step goals, tests and pass conditions for each stage. Stage 4 in this plan focuses on **container acquisition**, not location references, and Stage 5 shifts to static UI location discovery.
+
+2. **Adopted Roadmap**
+
+   * We agreed to follow the backend_plan.md as our authoritative guide. This means:
+
+     * **Stage 1** – Feature acquisition (RNA properties and operators).
+     * **Stage 2** – Token index for fast search.
+     * **Stage 3** – Aliases to support synonyms.
+     * **Stage 4** – Container acquisition (indexing top‑level operator modules).
+     * **Stage 5** – Static UI location discovery.
+     * Subsequent stages cover addon preferences, keymap provider, mode resolver, location resolver, breadcrumb builder, runtime verification, caching, and final search pipeline.
+
+---
+
+## Implementation Achievements
+
+### Stage 1 — Feature Acquisition (Complete)
+
+* **RNA & Operator Features**: The `rna_provider` and `operator_provider` collected ~5.8 k normalized RNA properties and ~2.3 k operators.
+* **Debug Panel**: The debug panel correctly reports counts and allows indexing via a “Build Feature Index” button, verifying that Stage 1 is complete.
+
+### Stage 2 — Token Index (Complete)
+
+* **Tokenization & Inverted Index**: We built a token-based inverted index (`TokenIndex`), splitting feature labels and identifiers on spaces, dots, and underscores.
+* **Search & Ranking**: We replaced linear scanning with a token lookup and introduced a scoring scheme:
+
+  1. **Exact label match** – 100 points.
+  2. **Exact identifier match** – 95 points.
+  3. **Token match** – 90 points.
+  4. **Prefix match** – 80 points.
+  5. **Substring match** – 60 points.
+* **Tests**: Queries like `cavity`, `delete`, `save`, `mesh cube` returned appropriate features and maintained consistent ranking; multi-token queries worked (AND logic).
+
+### Stage 3 — Aliases (Complete)
+
+* **Alias Dictionary & Synonym Map**: Implemented a small `ALIASES` mapping (e.g., `delete → ["remove", "erase"]`, `save → ["write file", "store"]`, `cavity → ["ambient occlusion", "viewport cavity"]`).
+* **Query Expansion**: For each search token, we expand it to its canonical form, ensuring synonyms resolve to the same features.
+* **Tests**: Queries like `remove`, `erase`, `write file`, `ambient occlusion` now return the same results as `delete`, `save`, and `cavity`. Multi-word synonyms (like `write file`) are tokenised and expanded correctly.
+* **Ranking Integration**: Alias matches contribute as token matches (score 90), so results are ranked below exact matches but above substring matches.
+
+### Stage 4 — Container Acquisition (Complete)
+
+* **Original Issue**: Initial implementation created a container for each RNA owner, resulting in ~3 700 containers and >11 k total features. This was too noisy.
+* **Refined Approach**: We simplified `collect_container_features` to generate a container per unique operator module and omit RNA owners, normalising module names to lower-case. The `feature_id` is `container:module:<module>`, the `label` is title‑cased, and the `identifier` remains the module name.
+* **Outcome**:
+
+  * **Containers**: 77 container features (matching the number of unique operator modules).
+  * **Total Features**: 8 196 (5 796 RNA + 2 323 operators + 77 containers).
+  * **Search Results**: Queries like `object`, `mesh`, `Brush`, `Sculpt` now include a single container entry plus relevant operators and RNA properties (e.g., `object` returns 385 results, including `object` container and relevant features).
+* This aligns with the backend plan’s Stage 4 pass condition that containers are identified and classified correctly.
+
+---
+
+## Tests & Validation
+
+We ran numerous queries via the debug panel to validate each stage:
+
+* **Single tokens** (`cavity`, `delete`, `save`): returned the right features, including synonyms.
+* **Multi-token** (`object delete`, `mesh cube`, `save mainfile`): confirmed AND semantics and ranking.
+* **Synonyms** (`remove`, `erase`, `ambient occlusion`, `write file`): matched canonical features, verifying alias expansion.
+* **Containers**: queries like `object`, `mesh`, `Brush`, `Sculpt` included the container entries along with related operators/RNA properties; container count was correct (77).
+
+All results matched the expected behaviour for Stages 2–4. There were no regressions in search speed, which remains <50 ms for typical queries.
+
+---
+
+## Summary & Next Steps
+
+We have successfully completed Stages 1–4 of the UniSearch backend as defined in **2.1-backend_plan.md**:
+
+* **Stage 1**: Feature acquisition – **Complete**.
+* **Stage 2**: Token index – **Complete**.
+* **Stage 3**: Aliases – **Complete**.
+* **Stage 4**: Container acquisition – **Complete** (with refined container list).
+
+**Next Stage (Stage 5)**: *Static UI Location Discovery.* This involves parsing Blender’s UI code to determine where each feature (property/operator) is drawn (e.g., panels, menus, popovers). We will need to implement `location_index.py`, scanning for calls like `layout.prop(...)`, `layout.operator(...)`, etc., and mapping features to container IDs with line numbers and confidence scores. This will prepare us for subsequent stages: addon preferences provider, keymap provider, mode resolver, location resolver, breadcrumb builder, runtime verification, and caching.
+
+This comprehensive progress report should serve as a clear record for continuing development in future sessions.
