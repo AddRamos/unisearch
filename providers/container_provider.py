@@ -1,51 +1,33 @@
 from ..core.models import FeatureRecord
 
-
 def collect_container_features(features):
+    """
+    Build a reduced container index from existing feature records.
 
+    Only one container is generated per unique operator module. RNA owners
+    are deliberately omitted to keep the number of containers manageable.
+    Modules are normalised to lower case to avoid duplicate entries like
+    'Object' and 'object'.
+    """
     containers = []
-
-    seen_operator_modules = set()
-    seen_rna_owners = set()
+    seen_modules = set()
 
     for feature in features:
-
         if feature.feature_type == "OPERATOR":
-
-            module = feature.identifier.split(".")[0]
-
-            if module not in seen_operator_modules:
-
-                seen_operator_modules.add(module)
-
+            # normalise the module name (prefix before the first dot) to lower case
+            module = feature.identifier.split(".", 1)[0].lower()
+            if module not in seen_modules:
+                seen_modules.add(module)
+                container_id = f"container:module:{module}"
+                label = module.replace("_", " ").title()
                 containers.append(
                     FeatureRecord(
-                        feature_id=f"container:operator_module:{module}",
-                        label=module.replace("_", " ").title(),
+                        feature_id=container_id,
+                        label=label,
                         identifier=module,
                         feature_type="CONTAINER",
-                        description=f"Operator category: {module}",
+                        description=f"Operator module: {module}",
                         source="CONTAINER",
                     )
                 )
-
-        if feature.feature_type == "RNA_PROPERTY":
-
-            for owner in feature.owners:
-
-                if owner not in seen_rna_owners:
-
-                    seen_rna_owners.add(owner)
-
-                    containers.append(
-                        FeatureRecord(
-                            feature_id=f"container:rna_owner:{owner}",
-                            label=owner,
-                            identifier=owner,
-                            feature_type="CONTAINER",
-                            description=f"RNA owner type: {owner}",
-                            source="CONTAINER",
-                        )
-                    )
-
     return containers
