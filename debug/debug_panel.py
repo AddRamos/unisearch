@@ -45,6 +45,16 @@ class UNISEARCH_PT_debug(
             "save",
             "xray",
             "bevel",
+            "object delete",
+            "save mainfile",
+            "mesh cube",
+            "Save As",
+            "Save as",
+            "delte",
+            "remove",
+            "write file",
+            "ambient occlusion",
+            "erase",                      
         ):
 
             op = col.operator(
