@@ -54,7 +54,10 @@ class UNISEARCH_PT_debug(
             "remove",
             "write file",
             "ambient occlusion",
-            "erase",                      
+            "object",
+            "mesh",
+            "Brush",
+            "Sculpt",                      
         ):
 
             op = col.operator(
