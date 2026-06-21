@@ -1,8 +1,16 @@
 from ..providers.rna_provider import collect_rna_features
 from ..providers.operator_provider import collect_operator_features
 from ..providers.container_provider import collect_container_features
+from ..providers.addon_preferences_provider import (
+    collect_addon_preference_data,
+)
 from .token_index import TokenIndex
 from .location_index import LocationIndex
+from .keymap_index import KeymapIndex
+from .mode_index import ModeIndex
+from .resolved_location_index import ResolvedLocationIndex
+from .breadcrumb_index import BreadcrumbIndex
+from .runtime_verification_index import RuntimeVerificationIndex
 
 
 ALIASES = {
@@ -42,6 +50,16 @@ class FeatureIndex:
 
         self.location_index = LocationIndex()
 
+        self.keymap_index = KeymapIndex()
+
+        self.mode_index = ModeIndex()
+
+        self.resolved_location_index = ResolvedLocationIndex()
+
+        self.breadcrumb_index = BreadcrumbIndex()
+
+        self.runtime_verification_index = RuntimeVerificationIndex()
+
     def rebuild(self):
 
         self.features.clear()
@@ -51,11 +69,17 @@ class FeatureIndex:
 
         operator_features = collect_operator_features()
 
+        addon_preference_data = collect_addon_preference_data()
+
         base_features = []
 
         base_features.extend(rna_features)
 
         base_features.extend(operator_features)
+
+        base_features.extend(
+            addon_preference_data.features
+        )
 
         container_features = collect_container_features(
             base_features
@@ -73,6 +97,10 @@ class FeatureIndex:
         print("=" * 60)
         print("NORMALIZED RNA FEATURES:", len(rna_features))
         print("OPERATOR FEATURES:", len(operator_features))
+        print(
+            "ADDON PREFERENCE FEATURES:",
+            len(addon_preference_data.features),
+        )
         print("CONTAINER FEATURES:", len(container_features))
         print("TOTAL SEARCHABLE FEATURES:", len(all_features))
         print("=" * 60)
@@ -87,7 +115,36 @@ class FeatureIndex:
 
         self.token_index.build(self.features)
 
-        self.location_index.build(self.features)
+        self.location_index.build(
+            self.features,
+            extra_locations=addon_preference_data.locations,
+            extra_containers=addon_preference_data.containers,
+        )
+
+        self.keymap_index.build()
+
+        self.mode_index.build(
+            self.features,
+            self.location_index,
+            self.keymap_index,
+        )
+
+        self.resolved_location_index.build(
+            self.features,
+            self.location_index,
+            self.mode_index,
+            self.keymap_index,
+        )
+
+        self.breadcrumb_index.build(
+            self.resolved_location_index
+        )
+
+        self.runtime_verification_index.build(
+            self.features,
+            self.resolved_location_index,
+            self.location_index,
+        )
 
     def search(self, query):
 

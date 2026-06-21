@@ -92,6 +92,20 @@ class UNISEARCH_OT_test_query(
                     feature.owners[:5]
                 )
 
+            if feature.feature_type == (
+                "ADDON_PREFERENCE"
+            ):
+
+                print(
+                    "    addon aliases:",
+                    feature.aliases,
+                )
+
+                print(
+                    "    owner:",
+                    feature.owners[:1],
+                )
+
         print("=" * 60)
 
         self.report(
@@ -354,6 +368,575 @@ class UNISEARCH_OT_inspect_unmatched_locations(
             (
                 f"Showing {len(unmatched)} "
                 f"unmatched UI calls"
+            )
+        )
+
+        return {'FINISHED'}
+
+
+class UNISEARCH_OT_list_addon_preferences(
+    bpy.types.Operator
+):
+    bl_idname = (
+        "unisearch.list_addon_preferences"
+    )
+
+    bl_label = (
+        "List Addon Preferences"
+    )
+
+    def execute(self, context):
+
+        if not FEATURE_INDEX.features:
+            FEATURE_INDEX.rebuild()
+
+        features = [
+            feature
+            for feature in FEATURE_INDEX.features
+            if feature.feature_type == "ADDON_PREFERENCE"
+        ]
+
+        features.sort(
+            key=lambda feature: (
+                feature.aliases[0] if feature.aliases else "",
+                feature.identifier,
+            )
+        )
+
+        print("\n")
+        print("=" * 60)
+        print("ADDON PREFERENCE FEATURES")
+        print("TOTAL:", len(features))
+        print("=" * 60)
+
+        for feature in features:
+
+            locations = (
+                FEATURE_INDEX
+                .location_index
+                .inspect_identifier(
+                    feature.identifier
+                )
+            )
+
+            addon_label = (
+                feature.aliases[0]
+                if feature.aliases
+                else ""
+            )
+
+            print(
+                feature.identifier,
+                "|",
+                feature.label,
+                "|",
+                addon_label,
+                "|",
+                feature.feature_id,
+            )
+
+            print(
+                "    owner:",
+                feature.owners[:1],
+            )
+
+            print(
+                "    locations:",
+                len(locations),
+            )
+
+            for location in locations[:5]:
+                print(
+                    "    -",
+                    location.container_id,
+                    f"[{location.confidence}]",
+                    location.ui_call,
+                    f"{location.source_file}:"
+                    f"{location.line_number}",
+                )
+
+        print("=" * 60)
+
+        self.report(
+            {'INFO'},
+            (
+                f"Listed {len(features)} "
+                f"addon preference features"
+            )
+        )
+
+        return {'FINISHED'}
+
+
+class UNISEARCH_OT_inspect_keymap(
+    bpy.types.Operator
+):
+    bl_idname = (
+        "unisearch.inspect_keymap"
+    )
+
+    bl_label = (
+        "Inspect Keymap"
+    )
+
+    target_id: bpy.props.StringProperty()
+
+    def execute(self, context):
+
+        if not FEATURE_INDEX.features:
+            FEATURE_INDEX.rebuild()
+
+        shortcuts = (
+            FEATURE_INDEX
+            .keymap_index
+            .inspect_target(
+                self.target_id
+            )
+        )
+
+        print("\n")
+        print("=" * 60)
+        print(
+            f"KEYMAP INSPECT: {self.target_id}"
+        )
+        print(
+            f"SHORTCUTS: {len(shortcuts)}"
+        )
+        print("=" * 60)
+
+        for shortcut in shortcuts[:40]:
+            print(
+                f"[{shortcut.target_type}]",
+                shortcut.event,
+                "|",
+                shortcut.keymap_name,
+                "|",
+                shortcut.keymap_space_type,
+                shortcut.keymap_region_type,
+            )
+
+            print(
+                "    operator:",
+                shortcut.operator_id,
+            )
+
+        print("=" * 60)
+
+        self.report(
+            {'INFO'},
+            (
+                f"{len(shortcuts)} "
+                f"shortcuts for "
+                f"{self.target_id}"
+            )
+        )
+
+        return {'FINISHED'}
+
+
+class UNISEARCH_OT_inspect_modes(
+    bpy.types.Operator
+):
+    bl_idname = (
+        "unisearch.inspect_modes"
+    )
+
+    bl_label = (
+        "Inspect Modes"
+    )
+
+    identifier: bpy.props.StringProperty()
+
+    def execute(self, context):
+
+        if not FEATURE_INDEX.features:
+            FEATURE_INDEX.rebuild()
+
+        candidates = (
+            FEATURE_INDEX
+            .mode_index
+            .inspect_identifier(
+                self.identifier
+            )
+        )
+
+        print("\n")
+        print("=" * 60)
+        print(
+            f"MODE INSPECT: {self.identifier}"
+        )
+        print(
+            f"MODE CANDIDATES: {len(candidates)}"
+        )
+        print("=" * 60)
+
+        if not candidates:
+            print("mode: UNKNOWN")
+            print("reason: no reliable mode evidence")
+        else:
+            for candidate in candidates[:30]:
+                print(
+                    f"[{candidate.source} {candidate.confidence}]",
+                    candidate.mode,
+                )
+
+                print(
+                    "    evidence:",
+                    candidate.evidence,
+                )
+
+                if candidate.container_id:
+                    print(
+                        "    container:",
+                        candidate.container_id,
+                    )
+
+                if candidate.keymap_name:
+                    print(
+                        "    keymap:",
+                        candidate.keymap_name,
+                    )
+
+        print("=" * 60)
+
+        self.report(
+            {'INFO'},
+            (
+                f"{len(candidates)} "
+                f"mode candidates for "
+                f"{self.identifier}"
+            )
+        )
+
+        return {'FINISHED'}
+
+
+class UNISEARCH_OT_inspect_resolved_locations(
+    bpy.types.Operator
+):
+    bl_idname = (
+        "unisearch.inspect_resolved_locations"
+    )
+
+    bl_label = (
+        "Inspect Resolved Locations"
+    )
+
+    identifier: bpy.props.StringProperty()
+
+    def execute(self, context):
+
+        if not FEATURE_INDEX.features:
+            FEATURE_INDEX.rebuild()
+
+        resolved_locations = (
+            FEATURE_INDEX
+            .resolved_location_index
+            .inspect_identifier(
+                self.identifier
+            )
+        )
+
+        print("\n")
+        print("=" * 60)
+        print(
+            f"RESOLVED LOCATION INSPECT: {self.identifier}"
+        )
+        print(
+            f"RESOLVED LOCATIONS: {len(resolved_locations)}"
+        )
+        print("=" * 60)
+
+        if not resolved_locations:
+            print("resolved location: none")
+        else:
+            for resolved in resolved_locations[:30]:
+                print(
+                    f"[{resolved.confidence}]",
+                    resolved.mode,
+                    "|",
+                    resolved.editor,
+                    resolved.region,
+                    "|",
+                    resolved.container_id,
+                    f"({resolved.container_type})",
+                )
+
+                print(
+                    "    feature:",
+                    resolved.feature_id,
+                    "|",
+                    resolved.feature_label,
+                )
+
+                print(
+                    "    container label:",
+                    resolved.container_label,
+                )
+
+                print(
+                    "    shortcut:",
+                    resolved.shortcut or "None",
+                )
+
+                print(
+                    "    shortcut kind:",
+                    resolved.shortcut_kind or "None",
+                )
+
+                print(
+                    "    sources:",
+                    resolved.location_source,
+                    resolved.mode_source,
+                    resolved.shortcut_source,
+                )
+
+                print(
+                    "    evidence:",
+                    resolved.evidence,
+                )
+
+        print("=" * 60)
+
+        self.report(
+            {'INFO'},
+            (
+                f"{len(resolved_locations)} "
+                f"resolved locations for "
+                f"{self.identifier}"
+            )
+        )
+
+        return {'FINISHED'}
+
+
+class UNISEARCH_OT_inspect_breadcrumbs(
+    bpy.types.Operator
+):
+    bl_idname = (
+        "unisearch.inspect_breadcrumbs"
+    )
+
+    bl_label = (
+        "Inspect Breadcrumbs"
+    )
+
+    identifier: bpy.props.StringProperty()
+
+    def execute(self, context):
+
+        if not FEATURE_INDEX.features:
+            FEATURE_INDEX.rebuild()
+
+        breadcrumbs = (
+            FEATURE_INDEX
+            .breadcrumb_index
+            .inspect_identifier(
+                self.identifier
+            )
+        )
+
+        print("\n")
+        print("=" * 60)
+        print(
+            f"BREADCRUMB INSPECT: {self.identifier}"
+        )
+        print(
+            f"BREADCRUMBS: {len(breadcrumbs)}"
+        )
+        print("=" * 60)
+
+        if not breadcrumbs:
+            print("breadcrumb: none")
+        else:
+            for breadcrumb in breadcrumbs[:30]:
+                print(
+                    f"[{breadcrumb.confidence}]",
+                    breadcrumb.breadcrumb,
+                )
+
+                print(
+                    "    parts:",
+                    breadcrumb.breadcrumb_parts,
+                )
+
+                print(
+                    "    shortcut:",
+                    breadcrumb.shortcut or "None",
+                    breadcrumb.shortcut_kind or "",
+                )
+
+        print("=" * 60)
+
+        self.report(
+            {'INFO'},
+            (
+                f"{len(breadcrumbs)} "
+                f"breadcrumbs for "
+                f"{self.identifier}"
+            )
+        )
+
+        return {'FINISHED'}
+
+
+class UNISEARCH_OT_inspect_runtime_verification(
+    bpy.types.Operator
+):
+    bl_idname = (
+        "unisearch.inspect_runtime_verification"
+    )
+
+    bl_label = (
+        "Inspect Runtime Verification"
+    )
+
+    identifier: bpy.props.StringProperty()
+
+    def execute(self, context):
+
+        if not FEATURE_INDEX.features:
+            FEATURE_INDEX.rebuild()
+
+        records = (
+            FEATURE_INDEX
+            .runtime_verification_index
+            .inspect_identifier(
+                self.identifier
+            )
+        )
+
+        print("\n")
+        print("=" * 60)
+        print(
+            f"RUNTIME VERIFY INSPECT: {self.identifier}"
+        )
+        print(
+            f"RECORDS: {len(records)}"
+        )
+        print("=" * 60)
+
+        if not records:
+            print("runtime verification: none")
+        else:
+            for record in records[:30]:
+                print(
+                    f"[{record.status}]",
+                    record.container_id,
+                )
+
+                print(
+                    "    feature verified:",
+                    record.feature_verified,
+                )
+
+                print(
+                    "    container verified:",
+                    record.container_verified,
+                )
+
+                print(
+                    "    detail:",
+                    record.detail,
+                )
+
+        print("=" * 60)
+
+        self.report(
+            {'INFO'},
+            (
+                f"{len(records)} "
+                f"runtime records for "
+                f"{self.identifier}"
+            )
+        )
+
+        return {'FINISHED'}
+
+
+class UNISEARCH_OT_list_runtime_outliers(
+    bpy.types.Operator
+):
+    bl_idname = (
+        "unisearch.list_runtime_outliers"
+    )
+
+    bl_label = (
+        "List Runtime Outliers"
+    )
+
+    limit: bpy.props.IntProperty(
+        default=40,
+        min=1,
+        max=200,
+    )
+
+    def execute(self, context):
+
+        if not FEATURE_INDEX.features:
+            FEATURE_INDEX.rebuild()
+
+        runtime_index = FEATURE_INDEX.runtime_verification_index
+
+        partial = runtime_index.inspect_status(
+            "PARTIAL",
+            self.limit,
+        )
+
+        remaining = max(
+            0,
+            self.limit - len(partial),
+        )
+
+        unverified = runtime_index.inspect_status(
+            "UNVERIFIED",
+            remaining,
+        )
+
+        records = partial + unverified
+
+        print("\n")
+        print("=" * 60)
+        print("RUNTIME VERIFICATION OUTLIERS")
+        print("PARTIAL TOTAL:", runtime_index.partial)
+        print("UNVERIFIED TOTAL:", runtime_index.unverified)
+        print("SHOWING:", len(records))
+        print("=" * 60)
+
+        if not records:
+            print("No runtime verification outliers.")
+        else:
+            for record in records:
+                print(
+                    f"[{record.status}]",
+                    record.feature_identifier,
+                    "|",
+                    record.container_id,
+                )
+
+                print(
+                    "    feature:",
+                    record.feature_id,
+                )
+
+                print(
+                    "    feature/container verified:",
+                    record.feature_verified,
+                    record.container_verified,
+                )
+
+                print(
+                    "    detail:",
+                    record.detail,
+                )
+
+        print("=" * 60)
+
+        self.report(
+            {'INFO'},
+            (
+                f"Showing {len(records)} "
+                f"runtime outliers"
             )
         )
 

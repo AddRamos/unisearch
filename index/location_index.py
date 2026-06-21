@@ -26,7 +26,12 @@ class LocationIndex:
 
         self.unmatched_calls = 0
 
-    def build(self, features):
+    def build(
+        self,
+        features,
+        extra_locations=None,
+        extra_containers=None,
+    ):
 
         self.locations.clear()
         self.by_feature_id.clear()
@@ -44,6 +49,9 @@ class LocationIndex:
 
         self.scan_stats = scan_result
         self.containers.update(scan_result.containers)
+
+        if extra_containers:
+            self.containers.update(extra_containers)
 
         for call in scan_result.calls:
 
@@ -80,7 +88,27 @@ class LocationIndex:
 
                 self._add_location(location)
 
+        if extra_locations:
+            for location in extra_locations:
+                self._add_location(location)
+
         self._print_build_report(scan_result)
+
+        if extra_locations or extra_containers:
+            print("\n")
+            print("=" * 60)
+            print("UNISEARCH EXTRA LOCATION PROVIDERS")
+            print("=" * 60)
+            print(
+                "EXTRA CONTAINERS:",
+                len(extra_containers or {}),
+            )
+            print(
+                "EXTRA LOCATIONS:",
+                len(extra_locations or []),
+            )
+            print("TOTAL LOCATION CANDIDATES:", len(self.locations))
+            print("=" * 60)
 
     def inspect_identifier(self, identifier):
 
